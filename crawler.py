@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any, Dict, List
 import requests
 import urllib.parse
 import logging
@@ -42,7 +43,8 @@ class CoupangPartnersCrawler(requests.Session):
         self.logger: logging.Logger = logging.getLogger("CoupangPartnersCrawler")
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(logging.StreamHandler())
-
+        self.login()
+        
     def __get_headers(self, headers: dict = None) -> dict:
         """
         HTTP 요청에 대한 헤더를 가져옵니다.
@@ -127,7 +129,7 @@ class CoupangPartnersCrawler(requests.Session):
         
         return self.token is not None
         
-    def search_keyword(self, keyword: str) -> list:
+    def search_keyword(self, keyword: str, size: int=36) -> List[Dict[str, Any]]:
         """
         Search for products by keyword.
 
@@ -138,7 +140,7 @@ class CoupangPartnersCrawler(requests.Session):
             list: The list of products matching the keyword.
         """
         headers: dict = self.__get_headers({"Content-Type": "application/json;charset=UTF-8", "X-Token": self.token})
-        data: str = json.dumps({"filter": keyword, "page": {"pageNumber": 0, "size": 36}})
+        data: str = json.dumps({"filter": keyword, "page": {"pageNumber": 0, "size": size}})
         response: requests.Response = self.__post(SEARCH_URL, headers=headers, data=data)
         products: list = response.json()['data']['products']
         return products
@@ -149,9 +151,10 @@ class CoupangPartnersCrawler(requests.Session):
 
         Args:
             product (dict): The product information.
-
+            requirement keys: (productId, itemId, type, title, image)
         Returns:
             str: The short URL of the product.
+            
         """
         headers: dict = self.__get_headers({'content-type': 'application/json;charset=UTF-8', "X-Token": self.token})
         json_data: dict = {'product': product}
@@ -162,8 +165,8 @@ class CoupangPartnersCrawler(requests.Session):
 if __name__ == "__main__":
     # Get account from CoupangPartners from the .env file
     load_dotenv()
-    username = os.getenv("USERNAME")
-    password = os.getenv("PASSWORD")
+    username = os.getenv("CP_USERNAME")
+    password = os.getenv("CP_PASSWORD")
     print(f'username: {username}')
 
     # Create an instance of CoupangPartnersCrawler
